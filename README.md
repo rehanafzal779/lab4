@@ -156,12 +156,22 @@ ML_MODEL_PATH=./best.pt
 
 ## 📦 Model File
 
-The API automatically loads your **best.pt** file from:
-```
-./best.pt
+The API **automatically downloads** the YOLOv8m model on first use.
+
+**Models used:**
+- **Default:** YOLOv8m (medium) - Balanced speed and accuracy (~49 MB)
+- **Custom:** Place `best.pt` in root for custom trained models
+
+To use a different pre-trained model, set:
+```bash
+# Use nano model (fastest, smallest)
+python manage_model.py --download yolov8n
+
+# Or use via environment
+export ML_MODEL_PATH=./custom_best.pt
 ```
 
-Make sure the model file is in the root directory of the project.
+**Note:** Model file is NOT stored in git due to Railway's 4GB limit.
 
 ## 🐳 Docker & Railway
 

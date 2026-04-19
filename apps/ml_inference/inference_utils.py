@@ -14,14 +14,28 @@ _MODEL_CACHE = None
 
 
 def get_model_path():
-    """Get the path to the YOLOv8 model file"""
-    model_path = settings.ML_MODEL_PATH
+    """Get the path to the YOLOv8 model file
     
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model not found at {model_path}")
+    Priority:
+    1. Use best.pt if it exists (for custom trained models)
+    2. Use ML_MODEL_PATH environment variable
+    3. Fall back to yolov8m (downloaded automatically)
+    """
+    # Check for custom best.pt model first
+    best_pt_path = os.path.join(settings.BASE_DIR, 'best.pt')
+    if os.path.exists(best_pt_path):
+        logger.info(f"Using custom model: {best_pt_path}")
+        return best_pt_path
     
-    logger.info(f"Model path: {model_path}")
-    return model_path
+    # Check environment variable
+    env_model = settings.ML_MODEL_PATH
+    if env_model and os.path.exists(env_model):
+        logger.info(f"Using model from env: {env_model}")
+        return env_model
+    
+    # Use default pre-trained model (will be auto-downloaded)
+    logger.info("Using pre-trained YOLOv8m model (will auto-download on first use)")
+    return 'yolov8m.pt'
 
 
 def load_model():

@@ -2,10 +2,12 @@
 
 ## Step-by-Step Railway Deployment
 
+## Step-by-Step Railway Deployment
+
 ### Prerequisites
 - Railway account: https://railway.app
 - GitHub account with your code
-- `best.pt` model in root directory
+- **No need for best.pt!** Model downloads automatically on deployment
 
 ### Step 1: Prepare Your Code
 
@@ -19,8 +21,11 @@ Update `.env` with your settings:
 SECRET_KEY=generate-with-django-command  # See below
 DEBUG=False
 ALLOWED_HOSTS=your-app.railway.app
-ML_MODEL_PATH=./best.pt
+# Optional: ML_MODEL_PATH=./best.pt  # Only if you have custom model
 ```
+
+**Note:** The API uses YOLOv8m by default, which auto-downloads (~49MB).
+If you have a custom trained model, set `ML_MODEL_PATH=./best.pt` in Railway variables.
 
 Generate SECRET_KEY:
 ```bash
@@ -58,7 +63,7 @@ In Railway Dashboard:
 | `SECRET_KEY` | Generate with command above | Yes |
 | `DEBUG` | `False` | Yes |
 | `ALLOWED_HOSTS` | `your-app.railway.app` | Yes |
-| `ML_MODEL_PATH` | `./best.pt` | Yes |
+| `ML_MODEL_PATH` | Leave empty for auto-download, or `./best.pt` | Optional |
 | `DATABASE_URL` | Auto from PostgreSQL | Optional |
 | `CORS_ALLOWED_ORIGINS` | Your frontend domain | No |
 

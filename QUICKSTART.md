@@ -143,8 +143,9 @@ For production (Railway), set these environment variables:
 | `ALLOWED_HOSTS` | Yes | `your-app.railway.app` |
 | `DATABASE_URL` | No | (optional PostgreSQL) |
 | `CORS_ALLOWED_ORIGINS` | No | `your-frontend.com` |
+| `ML_MODEL_PATH` | No | `./best.pt` (optional custom model) |
 
-See `.env.example` for all options.
+**Note:** The API automatically downloads YOLOv8m model on first use. No need to commit large model files!
 
 ## Common Tasks
 

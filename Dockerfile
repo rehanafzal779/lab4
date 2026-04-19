@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y \
     libsm6 \
     libxext6 \
     libxrender-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python dependencies from builder
@@ -41,7 +42,11 @@ ENV PATH=/root/.local/bin:$PATH \
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p logs media/uploads media/results
+RUN mkdir -p logs media/uploads media/results models
+
+# Download YOLOv8 model on build (caches in Docker layer)
+# Using yolov8m (medium) for better balance of speed and accuracy
+RUN python -c "from ultralytics import YOLO; print('Downloading YOLOv8 model...'); YOLO('yolov8m.pt'); print('Model ready!')" 2>&1 || echo "Model will download on first use"
 
 # Run migrations and collect static
 RUN python manage.py migrate --noinput || true
