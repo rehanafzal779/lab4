@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLOv8 ML API - Waste Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .status-bar {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .status {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .status.online {
+            color: #10b981;
+        }
+
+        .status.offline {
+            color: #ef4444;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-dot.online {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .api-url {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="file"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="file"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .image-preview {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 5px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .results {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            border-radius: 3px;
+        }
+
+        .result-item strong {
+            color: #333;
+        }
+
+        .confidence {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #7f1d1d;
+            border-left: 4px solid #ef4444;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .history-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .history-item-time {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .detection-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 10px;
+            background: #e5e7eb;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 YOLOv8 ML API Tester</h1>
+            <p>Test the Waste Detection API in real-time</p>
+        </header>
+
+        <div class="status-bar">
+            <div>
+                <span class="status-dot offline" id="statusDot"></span>
+                <span class="status offline" id="statusText">Checking API...</span>
+            </div>
+            <div class="api-url" id="apiUrl">API: Loading...</div>
+        </div>
+
+        <div class="main-content">
+            <!-- Upload Section -->
+            <div class="card">
+                <h2>📸 Upload Image</h2>
+                
+                <div id="messageBox" class="message"></div>
+
+                <div class="form-group">
+                    <label for="imageInput">Select Image:</label>
+                    <input type="file" id="imageInput" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <label for="confidenceInput">Confidence Threshold:</label>
+                    <input type="number" id="confidenceInput" min="0" max="1" step="0.05" value="0.5">
+                    <small style="color: #666;">Range: 0.0 - 1.0</small>
+                </div>
+
+                <div class="image-preview" id="imagePreview"></div>
+
+                <button id="inferenceBtn" disabled>
+                    <span class="spinner" style="display:none;"></span>
+                    Run Inference
+                </button>
+
+                <div class="results" id="resultsBox" style="display:none;">
+                    <h3 style="color: #333; margin-bottom: 10px;">Detection Results:</h3>
+                    <div id="resultsList"></div>
+                </div>
+
+                <div class="detection-stats" id="statsBox" style="display:none;">
+                    <div class="stat">
+                        <div class="stat-value" id="detectionCount">0</div>
+                        <div class="stat-label">Objects Detected</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="inferenceTime">0ms</div>
+                        <div class="stat-label">Inference Time</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="card">
+                <h2>📊 API Response</h2>
+
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="showTab('response')">Response</button>
+                    <button class="tab-button" onclick="showTab('history')">History</button>
+                    <button class="tab-button" onclick="showTab('api-info')">API Info</button>
+                </div>
+
+                <!-- Response Tab -->
+                <div id="response" class="tab-content show">
+                    <pre id="responseBox" style="background: #f3f4f6; padding: 15px; border-radius: 5px; overflow-x: auto; color: #333;">
+{
+  "status": "waiting",
+  "message": "Upload an image to start"
+}
+                    </pre>
+                </div>
+
+                <!-- History Tab -->
+                <div id="history" class="tab-content">
+                    <div id="historyBox" class="results">
+                        <div class="no-results">No history yet. Run inference to see results here.</div>
+                    </div>
+                </div>
+
+                <!-- API Info Tab -->
+                <div id="api-info" class="tab-content">
+                    <div style="line-height: 1.8;">
+                        <p><strong>API Endpoint:</strong></p>
+                        <p style="color: #667eea; margin-bottom: 15px;" id="apiEndpoint">Loading...</p>
+
+                        <p><strong>Available Endpoints:</strong></p>
+                        <ul style="margin-left: 20px; margin-bottom: 15px;">
+                            <li><code>/api/health/</code> - Health check</li>
+                            <li><code>/api/inference/</code> - Run inference</li>
+                            <li><code>/api/history/</code> - Get history</li>
+                            <li><code>/admin/</code> - Admin panel</li>
+                        </ul>
+
+                        <p><strong>Status:</strong></p>
+                        <p id="apiStatusInfo">Checking...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://lab-4--t41175390.replit.app';
+        let apiHistory = [];
+
+        // Check API status on load
+        document.addEventListener('DOMContentLoaded', async () => {
+            checkApiStatus();
+            loadHistory();
+            document.getElementById('imageInput').addEventListener('change', handleImageSelect);
+            document.getElementById('inferenceBtn').addEventListener('click', runInference);
+            document.getElementById('apiUrl').textContent = `API: ${API_BASE}`;
+            document.getElementById('apiEndpoint').textContent = API_BASE;
+        });
+
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/health/`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatus(true, data);
+                    document.getElementById('inferenceBtn').disabled = false;
+                } else {
+                    updateStatus(false, { message: `HTTP ${response.status}` });
+                }
+            } catch (error) {
+                updateStatus(false, { message: error.message });
+            }
+        }
+
+        function updateStatus(isOnline, data) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const apiStatusInfo = document.getElementById('apiStatusInfo');
+
+            if (isOnline) {
+                statusDot.className = 'status-dot online';
+                statusText.className = 'status online';
+                statusText.innerHTML = '<span class="status-dot online"></span>API Online';
+                apiStatusInfo.innerHTML = `<span style="color: #10b981;">✅ API is running</span><br>${data.message || 'Ready for inference'}`;
+            } else {
+                statusDot.className = 'status-dot offline';
+                statusText.className = 'status offline';
+                statusText.innerHTML = '<span class="status-dot offline"></span>API Offline';
+                apiStatusInfo.innerHTML = `<span style="color: #ef4444;">❌ API is offline</span><br>${data.message}`;
+                document.getElementById('inferenceBtn').disabled = true;
+            }
+        }
+
+        function handleImageSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const preview = document.getElementById('imagePreview');
+                    preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function runInference() {
+            const imageInput = document.getElementById('imageInput');
+            const confidence = parseFloat(document.getElementById('confidenceInput').value);
+            
+            if (!imageInput.files[0]) {
+                showMessage('Please select an image', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+            formData.append('confidence', confidence);
+
+            const btn = document.getElementById('inferenceBtn');
+            const spinner = btn.querySelector('.spinner');
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            showMessage('Running inference...', 'success');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/inference/`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResults(data);
+                    addToHistory(data);
+                    showMessage('✅ Inference completed successfully!', 'success');
+                } else {
+                    showMessage(`Error: ${data.message || 'Unknown error'}`, 'error');
+                    displayResults(data);
+                }
+
+                document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+                document.getElementById('responseBox').textContent = `Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        }
+
+        function displayResults(data) {
+            const resultsList = document.getElementById('resultsList');
+            const statsBox = document.getElementById('statsBox');
+            const resultsBox = document.getElementById('resultsBox');
+
+            if (data.detections && data.detections.length > 0) {
+                resultsBox.style.display = 'block';
+                statsBox.style.display = 'grid';
+                resultsList.innerHTML = data.detections.map(d => `
+                    <div class="result-item">
+                        <strong>${d.class_name || 'Unknown'}</strong>
+                        <span class="confidence">${(d.confidence * 100).toFixed(1)}%</span>
+                        <br>
+                        <small style="color: #666;">
+                            Position: (${d.bbox[0].toFixed(0)}, ${d.bbox[1].toFixed(0)}) to (${d.bbox[2].toFixed(0)}, ${d.bbox[3].toFixed(0)})
+                        </small>
+                    </div>
+                `).join('');
+
+                document.getElementById('detectionCount').textContent = data.detections.length;
+                document.getElementById('inferenceTime').textContent = 
+                    `${(data.inference_time * 1000).toFixed(0)}ms`;
+            } else {
+                resultsBox.style.display = 'block';
+                statsBox.style.display = 'none';
+                resultsList.innerHTML = '<div class="no-results">No detections found</div>';
+            }
+        }
+
+        function addToHistory(data) {
+            const historyItem = {
+                time: new Date().toLocaleTimeString(),
+                detections: data.detections ? data.detections.length : 0,
+                confidence: data.confidence_threshold,
+                inferenceTime: data.inference_time
+            };
+            
+            apiHistory.unshift(historyItem);
+            if (apiHistory.length > 10) apiHistory.pop();
+            
+            saveHistory();
+            loadHistory();
+        }
+
+        function loadHistory() {
+            const historyBox = document.getElementById('historyBox');
+            if (apiHistory.length === 0) {
+                historyBox.innerHTML = '<div class="no-results">No history yet. Run inference to see results here.</div>';
+                return;
+            }
+
+            historyBox.innerHTML = apiHistory.map((item, index) => `
+                <div class="history-item">
+                    <div class="history-item-time">${item.time}</div>
+                    <div><strong>${item.detections} objects detected</strong></div>
+                    <small style="color: #666;">
+                        Confidence: ${(item.confidence * 100).toFixed(0)}% | 
+                        Time: ${(item.inferenceTime * 1000).toFixed(0)}ms
+                    </small>
+                </div>
+            `).join('');
+        }
+
+        function saveHistory() {
+            localStorage.setItem('apiHistory', JSON.stringify(apiHistory));
+        }
+
+        function loadHistoryFromStorage() {
+            const stored = localStorage.getItem('apiHistory');
+            if (stored) {
+                apiHistory = JSON.parse(stored);
+            }
+        }
+
+        function showMessage(message, type) {
+            const msgBox = document.getElementById('messageBox');
+            msgBox.textContent = message;
+            msgBox.className = `message ${type} show`;
+            
+            if (type === 'success') {
+                setTimeout(() => msgBox.classList.remove('show'), 3000);
+            }
+        }
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('show');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('show');
+            event.target.classList.add('active');
+        }
+
+        // Load history on startup
+        loadHistoryFromStorage();
+        loadHistory();
+    </script>
+</body>
+</html>
