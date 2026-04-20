@@ -166,4 +166,4 @@ LOGGING = {
 }
 
 # ML Model Path
-ML_MODEL_PATH = os.environ.get('ML_MODEL_PATH', str(BASE_DIR / 'best.pt'))
+ML_MODEL_PATH = os.environ.get('ML_MODEL_PATH', r'C:\Users\User\Desktop\best.pt')
