@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: neat-now-api
+    runtime: docker
+    plan: free
+    dockerfile: ./Dockerfile
+    envVars:
+      - key: PYTHON_UNBUIFFERED
+        value: "1"
+    healthCheckPath: /api/health/
+    preDeployCommand: python manage.py migrate --noinput
+
